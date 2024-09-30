@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 from PIL import Image
 from gender_model import gender_detector  
-import cv2 as cv
+import cv2
 
 
 # Streamlit app code
@@ -19,7 +19,7 @@ if uploaded_file is not None:
     output_image = gender_detector(image)
 
     # Convert OpenCV BGR format to RGB format for displaying in Streamlit
-    output_image_rgb = cv.cvtColor(output_image, cv.COLOR_BGR2RGB)
+    output_image_rgb = cv2.cvtColor(output_image, cv2.COLOR_BGR2RGB)
 
     # Display the result
     st.image(output_image_rgb, caption="Processed Image", use_column_width=True)

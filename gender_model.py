@@ -1,4 +1,4 @@
-import cv2 as cv
+import cv2
 
 # Paths to model files
 faceProto = "modelNweight/opencv_face_detector.pbtxt"
@@ -11,16 +11,16 @@ MODEL_MEAN_VALUES = (78.4263377603, 87.7689143744, 114.895847746)
 genderList = ['Male', 'Female']
 
 # Load networks
-genderNet = cv.dnn.readNet(genderModel, genderProto)
-faceNet = cv.dnn.readNet(faceModel, faceProto)
+genderNet = cv2.dnn.readNet(genderModel, genderProto)
+faceNet = cv2.dnn.readNet(faceModel, faceProto)
 
 padding = 20
 
 def getFaceBox(net, frame, conf_threshold=0.7):
-    frameOpencvDnn = frame.copy()
-    frameHeight = frameOpencvDnn.shape[0]
-    frameWidth = frameOpencvDnn.shape[1]
-    blob = cv.dnn.blobFromImage(frameOpencvDnn, 1.0, (300, 300), [104, 117, 123], True, False)
+    frameOpencv2Dnn = frame.copy()
+    frameHeight = frameOpencv2Dnn.shape[0]
+    frameWidth = frameOpencv2Dnn.shape[1]
+    blob = cv2.dnn.blobFromImage(frameOpencv2Dnn, 1.0, (300, 300), [104, 117, 123], True, False)
 
     net.setInput(blob)
     detections = net.forward()
@@ -33,8 +33,8 @@ def getFaceBox(net, frame, conf_threshold=0.7):
             x2 = int(detections[0, 0, i, 5] * frameWidth)
             y2 = int(detections[0, 0, i, 6] * frameHeight)
             bboxes.append([x1, y1, x2, y2])
-            cv.rectangle(frameOpencvDnn, (x1, y1), (x2, y2), (0, 255, 0), int(round(frameHeight / 150)), 8)
-    return frameOpencvDnn, bboxes
+            cv2.rectangle(frameOpencv2Dnn, (x1, y1), (x2, y2), (0, 255, 0), int(round(frameHeight / 150)), 8)
+    return frameOpencv2Dnn, bboxes
 
 def gender_detector(frame):
     frameFace, bboxes = getFaceBox(faceNet, frame)
@@ -43,13 +43,13 @@ def gender_detector(frame):
                      max(0, bbox[0] - padding):min(bbox[2] + padding, frame.shape[1] - 1)]
         
         # Preprocess the face for the gender model
-        blob = cv.dnn.blobFromImage(face, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
+        blob = cv2.dnn.blobFromImage(face, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
         genderNet.setInput(blob)
         genderPreds = genderNet.forward()
         gender = genderList[genderPreds[0].argmax()]
 
         # Add gender label to the frame
         label = "{}".format(gender)
-        cv.putText(frameFace, label, (bbox[0], bbox[1] - 10), cv.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2, cv.LINE_AA)
+        cv2.putText(frameFace, label, (bbox[0], bbox[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
     
     return frameFace
