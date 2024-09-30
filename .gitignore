@@ -1,0 +1,9 @@
+# Ignore the virtual environment folder
+myenv/
+
+# Python bytecode and cache files
+__pycache__/
+*.py[cod]
+
+# Other environment or system-specific files
+*.env
