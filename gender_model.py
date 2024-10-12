@@ -1,20 +1,25 @@
 import cv2
 
-# Paths to model files
+# Paths to model files for face, gender, and age
 faceProto = "modelNweight/opencv_face_detector.pbtxt"
 faceModel = "modelNweight/opencv_face_detector_uint8.pb"
 genderProto = "modelNweight/gender_deploy.prototxt"
 genderModel = "modelNweight/gender_net.caffemodel"
+ageProto = "modelNweight/age_deploy.prototxt"
+ageModel = "modelNweight/age_net.caffemodel"
 
 # Mean values and labels
 MODEL_MEAN_VALUES = (78.4263377603, 87.7689143744, 114.895847746)
 genderList = ['Male', 'Female']
+ageList = ['(0-2)', '(4-6)', '(8-12)', '(15-20)', '(25-32)', '(38-43)', '(48-53)', '(60-100)']
 
 # Load networks
 genderNet = cv2.dnn.readNet(genderModel, genderProto)
+ageNet = cv2.dnn.readNet(ageModel, ageProto)
 faceNet = cv2.dnn.readNet(faceModel, faceProto)
 
-padding = 20
+# Adjust padding
+padding = 10  # Reduced padding to minimize zoom
 
 def getFaceBox(net, frame, conf_threshold=0.7):
     frameOpencv2Dnn = frame.copy()
@@ -36,7 +41,7 @@ def getFaceBox(net, frame, conf_threshold=0.7):
             cv2.rectangle(frameOpencv2Dnn, (x1, y1), (x2, y2), (0, 255, 0), int(round(frameHeight / 150)), 8)
     return frameOpencv2Dnn, bboxes
 
-def gender_detector(frame):
+def gender_age_detector(frame):
     frameFace, bboxes = getFaceBox(faceNet, frame)
     for bbox in bboxes:
         face = frame[max(0, bbox[1] - padding):min(bbox[3] + padding, frame.shape[0] - 1),
@@ -44,12 +49,22 @@ def gender_detector(frame):
         
         # Preprocess the face for the gender model
         blob = cv2.dnn.blobFromImage(face, 1.0, (227, 227), MODEL_MEAN_VALUES, swapRB=False)
+        
+        # Gender detection
         genderNet.setInput(blob)
         genderPreds = genderNet.forward()
         gender = genderList[genderPreds[0].argmax()]
 
-        # Add gender label to the frame
-        label = "{}".format(gender)
-        cv2.putText(frameFace, label, (bbox[0], bbox[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2, cv2.LINE_AA)
+        # Age detection
+        ageNet.setInput(blob)
+        agePreds = ageNet.forward()
+        age = ageList[agePreds[0].argmax()]
+
+        # Ensure the text is drawn within the box and fully visible
+        label = "{}, {}".format(gender, age)
+        y_label_position = max(0, bbox[1] - 10)  # Adjust the Y position of the label so it's visible
+
+        # Draw the label inside the bounding box to ensure it fits
+        cv2.putText(frameFace, label, (bbox[0], y_label_position), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 2, cv2.LINE_AA)
     
     return frameFace
